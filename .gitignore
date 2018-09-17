@@ -1,0 +1,13 @@
+#Ignorer tous les fichiers
+*.txt
+*.xml
+*.tsv
+*.csv
+*.zip
+*.html
+*.xlsx
+*.doc
+*.docx
+*.odg
+
+#Exception : scripts Python
