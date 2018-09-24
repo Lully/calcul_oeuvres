@@ -4,6 +4,8 @@
 *.tsv
 *.csv
 *.zip
+*.json
+*.pyc
 *.html
 *.xlsx
 *.doc

@@ -4,15 +4,18 @@ Created on Thu Jun 14 09:46:11 2018
 
 @author: BNF0017855
 
-Programme d'extraction et d'analyse des oeuvres générées par RobotDonnées pour identifier les auteurs homonymes co-auteurs d'une oeuvre
-dont l'homonymie est approximative : même initiale, une lettre (distance de Levenshtein : 1) dans le nom de famille nettoyé
+Programme d'extraction et d'analyse des oeuvres générées par
+RobotDonnées pour identifier les auteurs homonymes co-auteurs d'une oeuvre
+dont l'homonymie est approximative : même initiale, une lettre
+(distance de Levenshtein : 1) dans le nom de famille nettoyé
 
-Processus : 
+Processus :
     1. dezipper un lot d'oeuvre
     2. ne traiter que les oeuvres à plusieurs auteurs
-    3. pour une oeuvres à plusieurs auteurs, comparer les noms et prénoms d'auteurs (uniquement PEP : ne pas conserver les ORG)
-    
-Fonctions nécessaires : 
+    3. pour une oeuvres à plusieurs auteurs, comparer les noms
+    et prénoms d'auteurs (uniquement PEP : ne pas conserver les ORG)
+
+Fonctions nécessaires :
     - dézipper
     - ouvrir un ensemble de fichiers JSON
     - calculer la distance de Levenshtein
@@ -29,38 +32,44 @@ import distance
 pp = pprint.PrettyPrinter()
 reader = codecs.getreader("utf-8")
 
+
 def zip_2_files(zipfilename):
-    """A partir d'un nom de fichier ZIP, renvoie la liste des noms de fichiers contenus dans le zip"""
+    """A partir d'un nom de fichier ZIP, renvoie la liste des noms de fichiers
+    contenus dans le zip"""
     file = zipfile.ZipFile(zipfilename)
-    file.extractall()
-    
+    file.extractall()   
     return file
 
+
 def filename2json(filename):
-    """A partir d'un nom de fichier JSON, récupération de son contenu dans une variable"""
+    """A partir d'un nom de fichier JSON, récupération de
+    son contenu dans une variable"""
     data = ""
     with open(zipfile.open(filename)) as f:
         data = json.load(f)
         print(data)
     return data
 
-def analyse(file,outputfile):
+
+def analyse(file, outputfile):
     with open(file.filename) as f:
         TIC = json.load(f)
         liste_authors = TIC["authors"]
-        if (len(liste_authors)>1):
-            multi_authors(TIC,outputfile)
+        if (len(liste_authors) > 1):
+            multi_authors(TIC, outputfile)
+
 
 def clean_key(string):
     string = unidecode(string.lower())
-    signs = [" ","-","."]
+    signs = [" ", "-", "."]
     for sign in signs:
-        string = string.replace(sign,"")
+        string = string.replace(sign, "")
     return string
 
-def multi_authors(TIC,outputfile):
+
+def multi_authors(TIC, outputfile):
     dic_authors = defaultdict(dict)
-    line = [TIC["preferred_title"]["title"]," ".join(TIC["manifs"])]
+    line = [TIC["preferred_title"]["title"], " ".join(TIC["manifs"])]
     for author in TIC["authors"]:
         lastname_nett = clean_key(author[0].split(" ")[-1])
         initiale = unidecode(author[0][0].lower())
@@ -77,33 +86,51 @@ def multi_authors(TIC,outputfile):
         else:
             dic_authors[key]["count"] = 1
     for el in dic_authors:
-        metas_aut = el + "\t" + dic_authors[el]["Nom complet"] + "\t" + " ".join(dic_authors[el]["nna"])
+        metas_aut = "".join(el,
+                            "\t",
+                            dic_authors[el]["Nom complet"],
+                            "\t",
+                            " ".join(dic_authors[el]["nna"])
+                            )  
         if (dic_authors[el]["count"] > 1):
             print(line, metas_aut)
             outputfile.write("\t".join(line) + "\t" + metas_aut + "\n")
         for k in dic_authors:
-            if (distance.levenshtein(el,k) == 1 and dic_authors[el]["initiale"]==dic_authors[k]["initiale"]):
-                metas_autk = k + "\t" + dic_authors[k]["Nom complet"] + "\t" + " ".join(dic_authors[k]["nna"])
-                outputfile.write("\t".join(line) + "\t" + metas_aut + "\t" + metas_autk + "\n")
+            if (distance.levenshtein(el, k) == 1
+                    and dic_authors[el]["initiale"] == dic_authors[k]["initiale"]):
+                metas_autk = "".join(k,
+                                     "\t",
+                                     dic_authors[k]["Nom complet"],
+                                     "\t",
+                                     " ".join(dic_authors[k]["nna"])
+                                     )
+                outputfile.write("".join("\t".join(line),
+                                         "\t",
+                                         metas_aut,
+                                         "\t",
+                                         metas_autk,
+                                         "\n")
+                                 ) 
 
-def checkfiles(files,outputfile):
+
+def checkfiles(files, outputfile):
     for file in files:
-        analyse(file,outputfile)
+        analyse(file, outputfile)
+
 
 def EOT(content):
     foldername = content.filelist[0].filename.split("/")[0]
-    shutil.rmtree(foldername )
+    shutil.rmtree(foldername)
+
 
 if __name__ == "__main__":
     zipfilename = input("Nom du ou des fichiers zip (sep \";\") : ")
     zipfilename = zipfilename.split(";")
     for zipname in zipfilename:
         outputfilename = zipname[:-4] + "-rapport.txt"
-        outputfile = open(outputfilename,"w",encoding="utf-8")
-        outputfile.write("\t".join(["Titre","Liste des ARK BIB","Clé Nom","Nom","NNA"]) + "\n")
+        outputfile = open(outputfilename, "w", encoding="utf-8")
+        outputfile.write("\t".join(["Titre", "Liste des ARK BIB",
+                                    "Clé Nom", "Nom", "NNA"]) + "\n")
         content = zip_2_files(zipname)
-        checkfiles(content.filelist,outputfile)
+        checkfiles(content.filelist, outputfile)
         EOT(content)
-
-
-    
