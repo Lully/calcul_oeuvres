@@ -53,7 +53,7 @@ def filter(file, zipfile_ok, zipfile_ko, report, zipname):
     """
     with open(file.filename) as f:
         TIC = json.load(f)
-        test = liste_tests(TIC, report, f, zipname)
+        test = liste_tests(TIC, report, file.filename, zipname)
         if test:
             zipfile_ok.write(file.filename)
             print(zipname, file.filename)
@@ -137,6 +137,9 @@ def checkfiles(files, zipname, report):
 def zip2reportfile(zipname):
     outputfilename = zipname[:-4] + "-rejected.txt"
     outputfile = open(outputfilename, "w", encoding="utf-8")
+    headers = ["Motif", "Fichier ZIP", "Fichier JSON",
+               "ID Oeuvre", "ARK Manif", "Titre"]
+    outputfile.write(header + "\n")
     return outputfile
 
 
