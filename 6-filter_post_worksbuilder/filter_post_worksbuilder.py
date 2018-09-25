@@ -70,6 +70,8 @@ def liste_tests(TIC, report, f, zipname):
         test = check_long_titles(TIC, report, f, zipname)
     if test:
         test = check_elementary_pep(TIC, report, f, zipname)
+    if test:
+        test = check_workdate(TIC, report, f, zipname)
     return test
 
 
@@ -116,6 +118,27 @@ def check_elementary_pep(TIC, report, filename, zipname):
     return test
 
 
+def check_workdate(TIC, report, filename, zipname):
+    test = True
+    date = TIC["date"]
+    if (date and RepresentsInt(date)):
+        date = int(date)
+        if (date > 2018):
+            test = False
+    if not test:
+        tic2report(TIC, "Date > 2018", report, filename, zipname)
+    return test
+
+
+def RepresentsInt(string):
+    try:
+        int(string)
+        return True
+    except ValueError:
+        return False
+    
+
+
 def tic2report(TIC, error, report, filename, zipname):
     workid = TIC["id"]
     work_arks = ", ".join(TIC["manifs"])
@@ -139,7 +162,7 @@ def zip2reportfile(zipname):
     outputfile = open(outputfilename, "w", encoding="utf-8")
     headers = ["Motif", "Fichier ZIP", "Fichier JSON",
                "ID Oeuvre", "ARK Manif", "Titre"]
-    outputfile.write(header + "\n")
+    outputfile.write("\t".join(headers) + "\n")
     return outputfile
 
 
