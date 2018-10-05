@@ -13,6 +13,7 @@ Processus :
     - Appliquer chacun des filtres
 """
 import zipfile
+from collections import defaultdict
 import json
 import codecs
 import os
@@ -24,10 +25,10 @@ reader = codecs.getreader("utf-8")
 liste_pep_elementaires = []
 
 
-def zip_2_files(zipfilename):
+def zip_2_files(zipfile_name):
     """A partir d'un nom de fichier ZIP, renvoie la liste
     des noms de fichiers contenus dans le zip"""
-    file = zipfile.ZipFile(zipfilename)
+    file = zipfile.ZipFile(zipfile_name)
     file.extractall()
     return file
 
@@ -166,14 +167,80 @@ def zip2reportfile(zipname):
     return outputfile
 
 
+def dedupe(files, zip_file_name):
+    liste_dedupes = []
+    """
+    Supprimer les clusters composés seulement d'une traduction
+    alors qu'on a aussi un cluster avec toutes les éditions
+    dans toutes les langues
+    """
+    dict_clusters2manifs = defaultdict(set)
+    dict_clusters2filename = defaultdict(str)
+    dict_manifs2clusters = defaultdict()
+    dict_jsonfile2content = defaultdict() 
+
+    for jsonfile in files:
+        print("dedupe_analysis", jsonfile.filename)
+        with open(jsonfile.filename) as f:
+            dict_jsonfile2content[jsonfile.filename] = defaultdict(dict)
+            work = json.load(f)
+            dict_jsonfile2content[jsonfile.filename]["json"] = work
+            dict_jsonfile2content[jsonfile.filename]["id"] = work["id"]
+            id_work = work["id"]
+            manifs = work["manifs"]
+            nb_manifs = len(manifs)
+            dict_clusters2filename[id_work] = jsonfile.filename
+            for manif in manifs:
+                if (manif in dict_manifs2clusters
+                    and "list_works" in dict_manifs2clusters[manif]):
+                    dict_manifs2clusters[manif]["list_works"][id_work] = nb_manifs
+                else:
+                    dict_manifs2clusters[manif] = {"list_works": {
+                                                                id_work: nb_manifs
+                                                                }
+                                                  }
+                dict_clusters2manifs[id_work].add(manif)
+
+    # On réécrit ensuite un fichier ZIP avec uniquement les oeuvres
+    # qui ne font pas doublon
+    zip_file_filter_name = zip_file_name[:-4]+"-dedupe.zip"
+    zip_file_filter = zipfile.ZipFile(zip_file_filter_name, "w")
+    selected_works = set()
+    for manif in dict_manifs2clusters:
+        dict_manifs2clusters[manif]["selected_work"] = max(dict_manifs2clusters[manif]["list_works"], 
+                                                    key=lambda key: dict_manifs2clusters[manif]["list_works"][key])
+        selected_works.add(dict_manifs2clusters[manif]["selected_work"])
+        for work in dict_manifs2clusters[manif]["list_works"]:
+            if work != dict_manifs2clusters[manif]["selected_work"]:
+                liste_dedupes.append(work + "\t" + dict_manifs2clusters[manif]["selected_work"])
+
+    selected_works = list(selected_works)
+    for id_work in selected_works:
+        json_filename = dict_clusters2filename[id_work]
+        work = dict_jsonfile2content[json_filename]["json"]
+        # file = open(json_filename, "w", encoding="utf-8")
+        zip_file_filter.write(json_filename)
+        # os.remove(file)
+    liste_dedupes = list(set(liste_dedupes))
+    dedupe_files = open(f"{zip_file_name.replace('.zip', '')}-oeuvres_dedoublonnees.txt", "w", encoding="utf-8")
+    for dedupe in liste_dedupes:
+        dedupe_files.write(dedupe + "\n")
+
+    return zip_file_filter_name
+
+
 def EOT(report):
     report.close()
 
 
 def filter1zipfile(zipname):
+
     content = zip_2_files(zipname)
-    report = zip2reportfile(zipname)
-    checkfiles(content.filelist, zipname, report)
+
+    zip_file_dedupe_name = dedupe(content.filelist, zipname)
+    dedupe_content = zip_2_files(zip_file_dedupe_name)
+    report = zip2reportfile(zip_file_dedupe_name)
+    checkfiles(dedupe_content.filelist, zipname, report)
     EOT(report)
 
 
