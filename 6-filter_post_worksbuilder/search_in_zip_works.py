@@ -75,18 +75,22 @@ def search_in_file(file, zipname, report, keywords):
     on extrait tous les mots qu'il contient, concaténés dans une liste
     et on cherche si tous les keywords sont présents dans cette liste
     """
-    with open(file.filename) as f:
-        TIC = json.load(f)
-        liste_value_tic = TIC2list(TIC)
-        test = True
-        for word in keywords:
-            if word not in liste_value_tic:
-                test = False
-        if test:
-            line = [zipname, file.filename, TIC["preferred_title"]["title"],
-                    " ".join(keywords), " ".join(TIC["manifs"])]
-            report.write("\t".join(line) + "\n")
-
+    try:
+        with open(file.filename) as f:
+            print(file.filename)
+            TIC = json.load(f)
+            liste_value_tic = TIC2list(TIC)
+            test = True
+            for word in keywords:
+                if word not in liste_value_tic:
+                    test = False
+            if test:
+                line = [zipname, file.filename, TIC["preferred_title"]["title"],
+                        " ".join(keywords), " ".join(TIC["manifs"])]
+                print(line)
+                report.write("\t".join(line) + "\n")
+    except FileNotFoundError as err:
+        pass
 
 def check_empty_titles(TIC, report, filename, zipname):
     """Vérifie si le titre de l'oeuvre est
@@ -142,7 +146,7 @@ def searchwords(zipname, report_name, keywords):
 
 if __name__ == "__main__":
     zipfilename = input("Nom du ou des fichiers zip (sep \";\") : ")
-    keywords = input("mot(s) à rechercher")
+    keywords = input("mot(s) à rechercher : ")
     report_name = input("Nom du rapport : ")
     if not report_name:
         report_name = "rapport.txt"
@@ -151,4 +155,5 @@ if __name__ == "__main__":
     keywords = unidecode(keywords.lower()).split()
     zipfilename = zipfilename.split(";")
     for zipname in zipfilename:
+        print("\n\n\n", zipname)
         searchwords(zipname, report_name, keywords)
