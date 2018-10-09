@@ -24,6 +24,8 @@ reader = codecs.getreader("utf-8")
 
 liste_pep_elementaires = []
 
+liste_ark_manifs = []
+liste_nna_aut = []
 
 def zip_2_files(zipfile_name):
     """A partir d'un nom de fichier ZIP, renvoie la liste
@@ -43,7 +45,8 @@ def filename2json(filename):
     return data
 
 
-def filter(file, zipfile_ok, zipfile_ko, report, zipname):
+def filter(file, zipfile_ok, zipfile_ko, report, zipname,
+           file_ark_manifs, file_ark_aut):
     """"
     En entrée, un fichier JSON contenant une oeuvre
     on lui applique une succession de filtres
@@ -57,10 +60,27 @@ def filter(file, zipfile_ok, zipfile_ko, report, zipname):
         test = liste_tests(TIC, report, file.filename, zipname)
         if test:
             zipfile_ok.write(file.filename)
+            TIC_2_lists(TIC, file_ark_manifs, file_ark_aut)
             print(zipname, file.filename)
         else:
             zipfile_ko.write(file.filename)
             print(zipname, file.filename, "rejected")
+
+
+def TIC_2_lists(TIC, file_ark_manifs, file_ark_aut):
+    """
+    Génération de la liste des ARK concernés par les oeuvres créés
+    """
+    for ark_manif in TIC["manifs"]:
+        if ark_manif not in liste_ark_manifs:
+            liste_ark_manifs.append(ark_manif)
+            file_ark_manifs.write(ark_manif + "\n")
+    
+    for author in TIC["authors"]:
+        nna = author[3]
+        if nna not in liste_nna_aut:
+            liste_nna_aut.append(nna)
+            file_ark_manifs.write(nna2ark(nna) + "\n")
 
 
 def liste_tests(TIC, report, f, zipname):
@@ -148,13 +168,13 @@ def tic2report(TIC, error, report, filename, zipname):
     report.write("\t".join(line) + "\n")
 
 
-def checkfiles(files, zipname, report):
+def checkfiles(files, zipname, report, file_ark_manifs, file_ark_aut):
     outputzipname = zipname[:-4] + "-filter_ok.zip"
     excluded_works_name = zipname[:-4] + "-filter_ko.zip"
     outputzip = zipfile.ZipFile(outputzipname, "w")
     excluded_works = zipfile.ZipFile(excluded_works_name, "w")
     for file in files:
-        filter(file, outputzip, excluded_works, report, zipname)
+        filter(file, outputzip, excluded_works, report, zipname, file_ark_manifs, file_ark_aut)
         os.remove(file.filename)
 
 
@@ -229,23 +249,50 @@ def dedupe(files, zip_file_name):
     return zip_file_filter_name
 
 
-def EOT(report):
-    report.close()
+def EOT(list_files):
+    for report in list_files:
+        report.close()
 
 
-def filter1zipfile(zipname):
+def filter1zipfile(zipname, file_ark_manifs, file_ark_aut):
 
     content = zip_2_files(zipname)
 
     zip_file_dedupe_name = dedupe(content.filelist, zipname)
     dedupe_content = zip_2_files(zip_file_dedupe_name)
     report = zip2reportfile(zip_file_dedupe_name)
-    checkfiles(dedupe_content.filelist, zipname, report)
-    EOT(report)
+    checkfiles(dedupe_content.filelist, zipname,
+               report, file_ark_manifs, file_ark_aut)
+    EOT([report, file_ark_manifs, file_ark_aut])
 
+
+def lists_ark(id_treatment):
+    if not id_treatment:
+        import datetime
+        now = datetime.datetime.now()
+        id_treatment = str(now.year) + str(now.month) + str(now.day) + str(now.hour) + str(now.minute) + str(now.second)
+    if (id_treatment[-1] != "-"
+        and id_treatment[-1] != "_"):
+        id_treatment += "-"
+    file_ark_manifs = open(id_treatment + "ark_manifs.txt", "w", encoding="utf-8")
+    file_ark_aut = open(id_treatment + "ark_aut.txt", "w", encoding="utf-8")
+    return file_ark_manifs, file_ark_aut
+
+
+def nna2ark(nna):
+    """Conversion d'un NNA en ARK"""
+    ark = sru.SRU_result("http://catalogue.bnf.fr/api/SRU?",
+                         {"query": f"aut.recordid any {nna}"}).liste_identifiers
+    if ark:
+        ark = ark[0]
+    else:
+        ark = ""
+    return ark
 
 if __name__ == "__main__":
     zipfilename = input("Nom du ou des fichiers zip (sep \";\") : ")
+    id_treatment = input("Identifiant du traitement : ")
+    file_ark_manifs, file_ark_aut = lists_ark(id_treatment)
     zipfilename = zipfilename.split(";")
     for zipname in zipfilename:
-        filter1zipfile(zipname)
+        filter1zipfile(zipname, file_ark_manifs, file_ark_aut)
