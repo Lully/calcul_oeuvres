@@ -84,6 +84,7 @@ def check144_145(id_manif):
     liste141 = []
     liste144 = []
     liste145 = []
+    liste741 = []
     liste745 = []
     liste744 = []
     if (anlnum == "0" and test == True):
@@ -110,7 +111,15 @@ def check144_145(id_manif):
                 subf3 = f145.find("m:subfield[@code='3']",namespaces=ns).text
             if (f145.find("m:subfield[@code='a']",namespaces=ns) is not None):
                 subfa = unidecode(f145.find("m:subfield[@code='a']",namespaces=ns).text)
-            liste145.append([subf3,subfa])
+            liste145.append([subf3, subfa])
+        for f741 in record.xpath("//srw:recordData/m:record/m:datafield[@tag='741']", namespaces=ns):
+            subf3 = ""
+            subfa = ""
+            if (f741.find("m:subfield[@code='3']",namespaces=ns) is not None):
+                subf3 = f741.find("m:subfield[@code='3']",namespaces=ns).text
+            if (f741.find("m:subfield[@code='a']",namespaces=ns) is not None):
+                subfa = unidecode(f741.find("m:subfield[@code='a']",namespaces=ns).text)
+            liste741.append([subf3,subfa])
         for f744 in record.xpath("//srw:recordData/m:record/m:datafield[@tag='744']", namespaces=ns):
             subf3 = ""
             subfa = ""
@@ -140,6 +149,7 @@ def check144_145(id_manif):
         path_to_141 = path_to_anl + "/m:datafield[@tag='141']"
         path_to_144 = path_to_anl + "/m:datafield[@tag='144']"
         path_to_145 = path_to_anl + "/m:datafield[@tag='145']"
+        path_to_741 = path_to_anl + "/m:datafield[@tag='741']"
         path_to_744 = path_to_anl + "/m:datafield[@tag='744']"
         path_to_745 = path_to_anl + "/m:datafield[@tag='745']"
         for f141 in record.xpath(path_to_141, namespaces=ns):
@@ -165,7 +175,15 @@ def check144_145(id_manif):
                 subf3 = f145.find("m:subfield[@code='3']",namespaces=ns).text
             if (f145.find("m:subfield[@code='a']",namespaces=ns) is not None):
                 subfa = unidecode(f145.find("m:subfield[@code='a']",namespaces=ns).text)
-            liste145.append([subf3,subfa])
+            liste145.append([subf3, subfa])
+        for f741 in record.xpath(path_to_741, namespaces=ns):
+            subf3 = ""
+            subfa = ""
+            if (f741.find("m:subfield[@code='3']",namespaces=ns) is not None):
+                subf3 = f741.find("m:subfield[@code='3']",namespaces=ns).text
+            if (f741.find("m:subfield[@code='a']",namespaces=ns) is not None):
+                subfa = unidecode(f741.find("m:subfield[@code='a']",namespaces=ns).text)
+            liste741.append([subf3,subfa])
         for f744 in record.xpath(path_to_744, namespaces=ns):
             subf3 = ""
             subfa = ""
@@ -183,11 +201,11 @@ def check144_145(id_manif):
                 subfa = unidecode(f745.find("m:subfield[@code='a']",namespaces=ns).text)
             liste745.append([subf3,subfa])
     print(id_manif,liste145)
-    return (liste141,liste144,liste145,liste744,liste745)
+    return (liste141,liste144,liste145,liste741,liste744,liste745)
 
 def file2check14X(input_filename,output_reports):
     liste_oeuvres = {}
-    with open(input_filename) as csvfile:
+    with open(input_filename, encoding="utf-8") as csvfile:
         i = 0
         tableau = csv.reader(csvfile, delimiter='\t')
         colonne_clusterID = 0
@@ -357,9 +375,9 @@ def filename2outputfiles_14X(input_filename):
     output_sans_alignement_name = filename_root + "-oeuvres_sans_alignements_existants.csv"
     output_1_alignement_name = filename_root + "-oeuvres_1_alignement.csv"
     output_x_alignements_name = filename_root + "-oeuvres_x_alignements.csv"
-    output_sans_alignement = open(output_sans_alignement_name,"w",encoding="utf-8")
-    output_1_alignement = open(output_1_alignement_name,"w")
-    output_x_alignements = open(output_x_alignements_name,"w")
+    output_sans_alignement = open(output_sans_alignement_name, "w", encoding="utf-8")
+    output_1_alignement = open(output_1_alignement_name, "w", encoding="utf-8")
+    output_x_alignements = open(output_x_alignements_name, "w", encoding="utf-8")
     dic_files = {"output_sans_alignement_name":output_sans_alignement_name,
                  "liste_files":{
                  "output_sans_alignement":output_sans_alignement,

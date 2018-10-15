@@ -12,7 +12,7 @@ def filename2check_agregats(input_filename,liste_files,option_r="o"):
     output_sans_agregats = liste_files[0] 
     output_avec_agregats = liste_files[1] 
     output_clusters_750 = liste_files[2]
-    with open(input_filename) as csvfile:
+    with open(input_filename, encoding="utf-8") as csvfile:
         tableau = csv.reader(csvfile, delimiter='\t')
         colonne_type_notice = 0
         colonne_clusterID = 0
@@ -76,10 +76,10 @@ def analyse_clusters(liste_files,clusters):
 def filename2outputfiles(input_filename,id_traitement=""):
     if (id_traitement == ""):
         id_traitement = input_filename.split(".")[0]
-    output_sans_agregats = open(id_traitement + "-clusters_sans_agregats.csv","w")
-    output_avec_agregats = open(id_traitement + "-clusters_avec_agregats.csv","w")
-    output_clusters_750 = open(id_traitement + "-clusters_uniquement_750.csv","w")
-    output_stats = open("rapport-stats.csv","a", encoding="utf-8")
+    output_sans_agregats = open(id_traitement + "-clusters_sans_agregats.csv", "w", encoding="utf-8")
+    output_avec_agregats = open(id_traitement + "-clusters_avec_agregats.csv", "w", encoding="utf-8")
+    output_clusters_750 = open(id_traitement + "-clusters_uniquement_750.csv", "w", encoding="utf-8")
+    output_stats = open("rapport-stats.csv", "a", encoding="utf-8")
     return [output_sans_agregats,output_avec_agregats,output_clusters_750,output_stats]
 
 def EOT(nb_clusters_avec_agregats,nb_clusters_sans_agregats,nb_clusters_750,liste_files):
