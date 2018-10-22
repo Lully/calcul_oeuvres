@@ -212,6 +212,7 @@ def file2check14X(input_filename,output_reports):
         colonne_manifARK = 0
         colonne_anlnum = 0
         for row in tableau:
+            for el in row:
             if (i == 0):
                 i += 1
                 colonne_clusterID = row.index("clusterid")
@@ -231,9 +232,9 @@ def file2check14X(input_filename,output_reports):
                     anlnum = "0"
                 id_manif = "#".join([arkManif,anlnum])
                 if (clusterID in liste_oeuvres):
-                    liste_oeuvres[clusterID].append(id_manif + "~" + "\t".join(row))
+                    liste_oeuvres[clusterID].append(id_manif + "¤" + "\t".join(row))
                 else:
-                    liste_oeuvres[clusterID] = [id_manif + "~" + "\t".join(row)]
+                    liste_oeuvres[clusterID] = [id_manif + "¤" + "\t".join(row)]
     return liste_oeuvres
 
 
@@ -260,7 +261,7 @@ def check_oeuvres(output_reports,liste_oeuvres):
         liste745 = []
         #print(val)
         for manif in val:
-            manif = manif.split("~")
+            manif = manif.split("¤")
             #print(manif)
             id_manif = manif[0]
             resultRobotDonnees = manif[1]
@@ -293,7 +294,7 @@ def check_oeuvres(output_reports,liste_oeuvres):
             print ("liste144 : " + str(liste144))
             print ("liste145 : " + str(liste145))"""
             for manif in val:
-                manif = manif.split("~")
+                manif = manif.split("¤")
                 output_reports["liste_files"]["output_sans_alignement"].write(manif[1] + "\n")
         elif (len(liste141)+len(liste144)+len(liste145)+len(liste744)+len(liste745) == 1):
             #print("1",oeuvre,  liste141,liste144,liste145,liste744,liste745)
@@ -322,7 +323,7 @@ def check_oeuvres(output_reports,liste_oeuvres):
                 titreOeuvre = liste745[0][1]
             #print (oeuvre + " : 1 alignement\n")
             for manif in val:
-                [manifid,manifval] = manif.split("~")
+                [manifid,manifval] = manif.split("¤")
                 liens_manif = liste_dedup(manifid,manif_liens)
                 output_reports["liste_files"]["output_1_alignement"].write(manifval + "\t" + field + "\t" + liens_manif + "\t" + titreOeuvre + "\n")
         else:
@@ -354,7 +355,7 @@ def check_oeuvres(output_reports,liste_oeuvres):
                 listeIDoeuvres745.append(el[0])
                 listeTitresOeuvres745.append(el[1])
             for manif in val:
-                manif = manif.split("~")
+                manif = manif.split("¤")
                 output_reports["liste_files"]["output_x_alignements"].write(manif[1] 
                 + "\t" + ",".join(listeIDoeuvres141) 
                 + "\t" + " | ".join(listeTitresOeuvres141) 

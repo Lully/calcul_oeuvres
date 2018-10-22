@@ -14,6 +14,7 @@ Processus :
 """
 import zipfile
 from collections import defaultdict
+import re
 import json
 import codecs
 import os
@@ -88,6 +89,8 @@ def liste_tests(TIC, report, f, zipname):
     puis renvoie True ou False """
     test = check_empty_titles(TIC, report, f, zipname)
     if test:
+        test = check_crochets_carres(TIC, report, f, zipname)
+    if test:
         test = check_long_titles(TIC, report, f, zipname)
     if test:
         test = check_elementary_pep(TIC, report, f, zipname)
@@ -104,6 +107,17 @@ def check_empty_titles(TIC, report, filename, zipname):
     if not title:
         test = False
         tic2report(TIC, "Titre vide", report, filename, zipname)
+    return test
+
+
+def check_crochets_carres(TIC, report, filename, zipname):
+    """Vérifie si le titre de l'oeuvre contient un crochet 
+    ouvrant"""
+    test = True
+    title = TIC["preferred_title"]["title"].strip()
+    if "[" in  title:
+        test = False
+        tic2report(TIC, "Titre avec crochet carré", report, filename, zipname)
     return test
 
 
@@ -174,7 +188,8 @@ def checkfiles(files, zipname, report, file_ark_manifs, file_ark_aut):
     outputzip = zipfile.ZipFile(outputzipname, "w")
     excluded_works = zipfile.ZipFile(excluded_works_name, "w")
     for file in files:
-        filter(file, outputzip, excluded_works, report, zipname, file_ark_manifs, file_ark_aut)
+        filter(file, outputzip, excluded_works, report, zipname,
+               file_ark_manifs, file_ark_aut)
         os.remove(file.filename)
 
 
@@ -263,7 +278,7 @@ def filter1zipfile(zipname, file_ark_manifs, file_ark_aut):
     report = zip2reportfile(zip_file_dedupe_name)
     checkfiles(dedupe_content.filelist, zipname,
                report, file_ark_manifs, file_ark_aut)
-    EOT([report, file_ark_manifs, file_ark_aut])
+    EOT([report])
 
 
 def lists_ark(id_treatment):
@@ -296,3 +311,4 @@ if __name__ == "__main__":
     zipfilename = zipfilename.split(";")
     for zipname in zipfilename:
         filter1zipfile(zipname, file_ark_manifs, file_ark_aut)
+    EOT([file_ark_manifs, file_ark_aut])
