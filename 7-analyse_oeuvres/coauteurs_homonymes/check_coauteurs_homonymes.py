@@ -32,6 +32,8 @@ import distance
 pp = pprint.PrettyPrinter()
 reader = codecs.getreader("utf-8")
 
+errors = []
+
 
 def zip_2_files(zipfilename):
     """A partir d'un nom de fichier ZIP, renvoie la liste des noms de fichiers
@@ -51,12 +53,15 @@ def filename2json(filename):
     return data
 
 
-def analyse(file, outputfile):
+def analyse(zipname, file, outputfile):
     with open(file.filename) as f:
-        TIC = json.load(f)
-        liste_authors = TIC["authors"]
-        if (len(liste_authors) > 1):
-            multi_authors(TIC, outputfile)
+        try:
+            TIC = json.load(f)
+            liste_authors = TIC["authors"]
+            if (len(liste_authors) > 1):
+                multi_authors(TIC, outputfile)
+        except json.decoder.JSONDecodeError as err:
+            errors.append([zipname, file.filename, str(err)])
 
 
 def clean_key(string):
@@ -86,11 +91,12 @@ def multi_authors(TIC, outputfile):
         else:
             dic_authors[key]["count"] = 1
     for el in dic_authors:
-        metas_aut = "".join(el,
+        metas_aut = "".join([el,
                             "\t",
                             dic_authors[el]["Nom complet"],
                             "\t",
                             " ".join(dic_authors[el]["nna"])
+                            ]
                             )  
         if (dic_authors[el]["count"] > 1):
             print(line, metas_aut)
@@ -98,24 +104,24 @@ def multi_authors(TIC, outputfile):
         for k in dic_authors:
             if (distance.levenshtein(el, k) == 1
                     and dic_authors[el]["initiale"] == dic_authors[k]["initiale"]):
-                metas_autk = "".join(k,
+                metas_autk = "".join([k,
                                      "\t",
                                      dic_authors[k]["Nom complet"],
                                      "\t",
                                      " ".join(dic_authors[k]["nna"])
-                                     )
-                outputfile.write("".join("\t".join(line),
+                                     ])
+                outputfile.write("".join(["\t".join(line),
                                          "\t",
                                          metas_aut,
                                          "\t",
                                          metas_autk,
-                                         "\n")
+                                         "\n"])
                                  ) 
 
 
-def checkfiles(files, outputfile):
+def checkfiles(zipname, files, outputfile):
     for file in files:
-        analyse(file, outputfile)
+        analyse(zipname, file, outputfile)
 
 
 def EOT(content):
@@ -127,10 +133,16 @@ if __name__ == "__main__":
     zipfilename = input("Nom du ou des fichiers zip (sep \";\") : ")
     zipfilename = zipfilename.split(";")
     for zipname in zipfilename:
-        outputfilename = zipname[:-4] + "-rapport.txt"
-        outputfile = open(outputfilename, "w", encoding="utf-8")
-        outputfile.write("\t".join(["Titre", "Liste des ARK BIB",
-                                    "Clé Nom", "Nom", "NNA"]) + "\n")
-        content = zip_2_files(zipname)
-        checkfiles(content.filelist, outputfile)
-        EOT(content)
+        if (".json" in zipname):
+            zip1 = zipname.split("\\")[-1]
+            outputfilename = zip1[:-4] + "-rapport_auteurs_homonymes.txt"
+            outputfile = open(outputfilename, "w", encoding="utf-8")
+            outputfile.write("\t".join(["Titre", "Liste des ARK BIB",
+                                        "Clé Nom", "Nom", "NNA"]) + "\n")
+            content = zip_2_files(zipname)
+            checkfiles(zipname, content.filelist, outputfile)
+            EOT(content)
+    if errors:
+        errors_file = open("erreurs_JSON.txt", "a", encoding="utf-8")
+        for error in errors:
+            errors_file.write("\t".join(error) + "\n")
