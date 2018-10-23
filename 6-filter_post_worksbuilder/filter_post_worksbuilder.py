@@ -188,8 +188,9 @@ def checkfiles(files, zipname, report, file_ark_manifs, file_ark_aut):
     outputzip = zipfile.ZipFile(outputzipname, "w")
     excluded_works = zipfile.ZipFile(excluded_works_name, "w")
     for file in files:
-        filter(file, outputzip, excluded_works, report, zipname,
-               file_ark_manifs, file_ark_aut)
+        if ("json" in file.filename):
+            filter(file, outputzip, excluded_works, report, zipname,
+                   file_ark_manifs, file_ark_aut)
         os.remove(file.filename)
 
 
