@@ -217,25 +217,26 @@ def dedupe(files, zip_file_name):
 
     for jsonfile in files:
         print("dedupe_analysis", jsonfile.filename)
-        with open(jsonfile.filename) as f:
-            dict_jsonfile2content[jsonfile.filename] = defaultdict(dict)
-            work = json.load(f)
-            dict_jsonfile2content[jsonfile.filename]["json"] = work
-            dict_jsonfile2content[jsonfile.filename]["id"] = work["id"]
-            id_work = work["id"]
-            manifs = work["manifs"]
-            nb_manifs = len(manifs)
-            dict_clusters2filename[id_work] = jsonfile.filename
-            for manif in manifs:
-                if (manif in dict_manifs2clusters
-                    and "list_works" in dict_manifs2clusters[manif]):
-                    dict_manifs2clusters[manif]["list_works"][id_work] = nb_manifs
-                else:
-                    dict_manifs2clusters[manif] = {"list_works": {
-                                                                id_work: nb_manifs
-                                                                }
-                                                  }
-                dict_clusters2manifs[id_work].add(manif)
+        if ("json" in jsonfile.filename):
+            with open(jsonfile.filename) as f:
+                dict_jsonfile2content[jsonfile.filename] = defaultdict(dict)
+                work = json.load(f)
+                dict_jsonfile2content[jsonfile.filename]["json"] = work
+                dict_jsonfile2content[jsonfile.filename]["id"] = work["id"]
+                id_work = work["id"]
+                manifs = work["manifs"]
+                nb_manifs = len(manifs)
+                dict_clusters2filename[id_work] = jsonfile.filename
+                for manif in manifs:
+                    if (manif in dict_manifs2clusters
+                        and "list_works" in dict_manifs2clusters[manif]):
+                        dict_manifs2clusters[manif]["list_works"][id_work] = nb_manifs
+                    else:
+                        dict_manifs2clusters[manif] = {"list_works": {
+                                                                    id_work: nb_manifs
+                                                                    }
+                                                    }
+                    dict_clusters2manifs[id_work].add(manif)
 
     # On réécrit ensuite un fichier ZIP avec uniquement les oeuvres
     # qui ne font pas doublon
