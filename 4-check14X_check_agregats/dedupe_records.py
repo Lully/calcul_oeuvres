@@ -143,7 +143,7 @@ def clusterisation(dico, distance_max):
 
 
 def dedupe_clusters(input_filename, outputfile, distance_max):
-    with open(input_filename, "r", encoding="utf-8") as inputfile:
+    with open(input_filename, encoding="utf-8") as inputfile:
         table = csv.reader(inputfile, delimiter="\t")
         dic_manifs2rows = defaultdict(list)
         dic_temp = defaultdict(dict)
@@ -190,3 +190,4 @@ def dedupe1file(input_filename, distance_max):
 if __name__ == "__main__":
     input_filename = input("Fichier CSV à traiter : ")
     distance_max = 0
+    dedupe1file(input_filename, distance_max)
