@@ -212,29 +212,28 @@ def file2check14X(input_filename,output_reports):
         colonne_manifARK = 0
         colonne_anlnum = 0
         for row in tableau:
-            for el in row:
-                if (i == 0):
-                    i += 1
-                    colonne_clusterID = row.index("clusterid")
-                    colonne_manifARK  = row.index("id de la manifestation (ARK)")
-                    colonne_anlnum  = row.index("anlnum")
-                    colonne_type_notice = row.index("Type de notice")
-                    output_reports["liste_files"]["output_sans_alignement"].write("\t".join(row) + "\n")
-                    output_reports["liste_files"]["output_1_alignement"].write("\t".join(row) + "\t" + "\t".join(["Champ lien","ark Oeuvre","Titre Oeuvre"]) + "\n")
-                    output_reports["liste_files"]["output_x_alignements"].write("\t".join(row) + "\t" + "\t".join(["ARK 141","Titres 141","ARK 144","Titres 144","ARK 145","Titres 145","ARK 744","Titres 744","ARK 745","Titres 745"]) + "\n")
+            if (i == 0):
+                i += 1
+                colonne_clusterID = row.index("clusterid")
+                colonne_manifARK  = row.index("id de la manifestation (ARK)")
+                colonne_anlnum  = row.index("anlnum")
+                colonne_type_notice = row.index("Type de notice")
+                output_reports["liste_files"]["output_sans_alignement"].write("\t".join(row) + "\n")
+                output_reports["liste_files"]["output_1_alignement"].write("\t".join(row) + "\t" + "\t".join(["Champ lien","ark Oeuvre","Titre Oeuvre"]) + "\n")
+                output_reports["liste_files"]["output_x_alignements"].write("\t".join(row) + "\t" + "\t".join(["ARK 141","Titres 141","ARK 144","Titres 144","ARK 145","Titres 145","ARK 744","Titres 744","ARK 745","Titres 745"]) + "\n")
+            else:
+                #print(colonne_clusterID, colonne_manifARK)
+                clusterID = row[colonne_clusterID]
+                arkManif = row[colonne_manifARK]
+                print(arkManif)
+                anlnum = row[colonne_anlnum]
+                if (row[colonne_type_notice] == "m"):
+                    anlnum = "0"
+                id_manif = "#".join([arkManif,anlnum])
+                if (clusterID in liste_oeuvres):
+                    liste_oeuvres[clusterID].append(id_manif + "¤" + "\t".join(row))
                 else:
-                    #print(colonne_clusterID, colonne_manifARK)
-                    clusterID = row[colonne_clusterID]
-                    arkManif = row[colonne_manifARK]
-                    print(arkManif)
-                    anlnum = row[colonne_anlnum]
-                    if (row[colonne_type_notice] == "m"):
-                        anlnum = "0"
-                    id_manif = "#".join([arkManif,anlnum])
-                    if (clusterID in liste_oeuvres):
-                        liste_oeuvres[clusterID].append(id_manif + "¤" + "\t".join(row))
-                    else:
-                        liste_oeuvres[clusterID] = [id_manif + "¤" + "\t".join(row)]
+                    liste_oeuvres[clusterID] = [id_manif + "¤" + "\t".join(row)]
     return liste_oeuvres
 
 
