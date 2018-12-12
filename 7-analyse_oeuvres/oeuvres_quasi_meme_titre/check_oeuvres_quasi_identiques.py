@@ -5,15 +5,13 @@ Created on Thu Jun 14 09:46:11 2018
 @author: BNF0017855
 
 Programme d'extraction et d'analyse des oeuvres générées par
-RobotDonnées pour identifier les auteurs homonymes co-auteurs d'une oeuvre
-dont l'homonymie est approximative : même initiale, une lettre
-(distance de Levenshtein : 1) dans le nom de famille nettoyé
+RobotDonnées pour identifier les titres d'un même auteur qui seraient
+quasiment identiques (hypothèse : suite à une faute de frappe dans le titre)
 
 Processus :
     1. dezipper un lot d'oeuvre
-    2. ne traiter que les oeuvres à plusieurs auteurs
-    3. pour une oeuvres à plusieurs auteurs, comparer les noms
-    et prénoms d'auteurs (uniquement PEP : ne pas conserver les ORG)
+    2. pour un auteur donné, extraire les formes de titre
+    3. comparer à 2 caractères près
 
 Fonctions nécessaires :
     - dézipper
@@ -22,12 +20,15 @@ Fonctions nécessaires :
 """
 import zipfile
 import json
+import string
 import codecs
 import shutil
 from collections import defaultdict
 import pprint
 from unidecode import unidecode
 import distance
+
+from stdf import create_file, line2report
 
 pp = pprint.PrettyPrinter()
 reader = codecs.getreader("utf-8")
@@ -53,23 +54,67 @@ def filename2json(filename):
     return data
 
 
-def analyse(zipname, file, outputfile):
+def analyse(dict_aut2titles, dict_titles2ark, zipname, file):
+    """
+    Il faut pour un zip donné, regrouper les oeuvres d'un même auteur
+    --> dictionnaire au niveau du zip
+    """
     with open(file.filename) as f:
         try:
             TIC = json.load(f)
-            liste_authors = TIC["authors"]
-            if (len(liste_authors) > 1):
-                multi_authors(TIC, outputfile)
+            liste_authors = []
+            for author in TIC["authors"]:
+                liste_authors.append(author[-1])
+            title = TIC["preferred_title"]["title"]
+            for author in liste_authors:
+                dict_aut2titles[author].add(title)
+            for ark in TIC["manifs"]:
+                dict_titles2ark[title].add(ark)            
         except json.decoder.JSONDecodeError as err:
             errors.append([zipname, file.filename, str(err)])
 
 
-def clean_key(string):
-    string = unidecode(string.lower())
-    signs = [" ", "-", "."]
-    for sign in signs:
-        string = string.replace(sign, "")
-    return string
+def analyse_titles(author, liste_titles,
+                   dict_titles2ark, zipname, outputfile):
+    """
+    Si un auteur a plusieurs titres associés : 
+    on compare chaque titre avec chacun des titres suivants dans la liste
+    en ne tenant pas compte des variantes sur les chiffres
+    """
+    i = 0
+    for title in liste_titles[i:]:
+        title_chars = clean_titles_int(title)
+        for foll_title in liste_titles[i + 1:]:
+            foll_title_chars = clean_titles_int(foll_title)
+            dist = distance.levenshtein(title, foll_title)
+            if ((dist == 1 or dist == 2)
+                and title_chars != foll_title_chars):
+                nbark_title1 = len(dict_titles2ark[title])
+                nbark_title2 = len(dict_titles2ark[foll_title])
+                ark_title = " ".join(list(dict_titles2ark[title]))
+                ark_foll_title = " ".join(list(dict_titles2ark[foll_title]))
+                if nbark_title1 > nbark_title2:
+                    line = [str(author),
+                            ark_title, title,
+                            ark_foll_title, foll_title,
+                            str(dist), zipname]
+                    line2report(line, outputfile)
+                else:
+                    line = [str(author),
+                            ark_foll_title, foll_title,
+                            ark_title, title,
+                            str(dist), zipname]
+                    line2report(line, outputfile)
+        i += 1
+
+def clean_titles_int(text):
+    """
+    Suppression des chiffres dans les chaînes de caractères, pour éviter
+    que ce soit seulement une date ou un numéro qui indique un problème
+    """
+    for char in string.digits:
+        text = text.replace(str(char), "")
+    return text
 
 
 def multi_authors(TIC, outputfile):
@@ -121,8 +166,15 @@ def multi_authors(TIC, outputfile):
 
 
 def checkfiles(zipname, files, outputfile):
+    dict_aut2titles = defaultdict(set)
+    dict_titles2ark = defaultdict(set)
     for file in files:
-        analyse(zipname, file, outputfile)
+        analyse(dict_aut2titles, dict_titles2ark, zipname, file)
+
+    for author in dict_aut2titles:
+        if len(dict_aut2titles[author]) > 1:
+            analyse_titles(author, list(dict_aut2titles[author]),
+                           dict_titles2ark, zipname, outputfile)
 
 
 def EOT(content):
@@ -136,10 +188,10 @@ if __name__ == "__main__":
     for zipname in zipfilename:
         if (".zip" in zipname):
             zip1 = zipname.split("\\")[-1]
-            outputfilename = zip1[:-4] + "-rapport_auteurs_homonymes.txt"
+            outputfilename = zip1[:-4] + "-rapport_titres_quasi_identiques.txt"
             outputfile = open(outputfilename, "w", encoding="utf-8")
-            outputfile.write("\t".join(["Titre", "Liste des ARK BIB",
-                                        "Clé Nom", "Nom", "NNA"]) + "\n")
+            outputfile.write("\t".join(["NNA", "Titre 1",
+                                        "ARKs Titre 1", "Titre 2", "ARKs Titre 2"]) + "\n")
             content = zip_2_files(zipname)
             checkfiles(zipname, content.filelist, outputfile)
             EOT(content)
